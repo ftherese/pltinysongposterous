@@ -8,7 +8,7 @@
 # This search takes a string from the command line which may contain any 
 # information pertaining to song title, artist name, or album title.  Tinysong 
 # automatically finds the most popular song that corresponds to the search and 
-# returns, among other details, the songID that will be used in the creation of # the widget.  The widget is then posted to Posterous in the 'body' form 
+# returns, among other details, the SongID that will be used in the creation of # the widget.  The widget is then posted to Posterous in the 'body' form 
 # element.  I don't really know why, but there has to be a space between the 
 # "body=" and the "<object width=" otherwise posterous says the content is 
 # invalid... oh well.  Finally, Posterous returns some XML to describe the 
@@ -20,9 +20,9 @@
 
 
 require LWP::UserAgent;
-require HTML::Parser;
 use URI;
 use XML::Simple;
+use JSON;
 
 my @creds;
 open (CREDS, "creds.txt") || die "fill in your creds.txt.";
@@ -40,23 +40,26 @@ my $ua = LWP::UserAgent->new;
 my $request = shift;
  while (@ARGV) {$request .= " " . shift;}
  my $url = URI->new( "http://www.tinysong.com/b/$request" );
+ $url->query_form('format' => 'json');
  
-my @songinfo = split(/; /, $ua->get($url)->decoded_content);
- my $htmlresults = qq~ <object width="250" height="40"><param name="movie" value="http://listen.grooveshark.com/songWidget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songID=$songinfo[1]&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/songWidget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songID=$songinfo[1]&amp;style=metal&amp;p=0"></embed>~;
+my $songinfo = from_json($ua->get($url)->decoded_content);
+
+my $htmlresults = qq~ <object width="250" height="40"><param name="movie" value="http://listen.grooveshark.com/songWidget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/songWidget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0"></embed>~;
+
 #  $htmlresults =~ s/([^\\])(["`])/$1\\$2/g;
 
 my $posturl = URI->new( "http://posterous.com/api/newpost");
   $posturl->query_form(  # And here the form data pairs:
    'site_id' => 1251953,
    'autopost' => 0,
-   'title' => "$songinfo[4] - $songinfo[2]",
+   'title' => "$songinfo->{SongName} - $songinfo->{ArtistName}",
    'body' => $htmlresults,
   );
 
 my $data = XMLin($ua->get($posturl)->content);
- my $posterousurl = $data->{post}->{url};
+my $posterousurl = $data->{post}->{url};
 
-foreach my $n (@songinfo) {
-        print $n . "\n";}
+while( my ($k, $v) = each %{$songinfo} ) {
+        print "$k : $v.\n";}
 
 print $posterousurl . "\n";
