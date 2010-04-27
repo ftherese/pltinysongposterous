@@ -6,10 +6,10 @@
 # apidocs.tinysong.com is 32.)
 
 require LWP::UserAgent;
-require HTML::Parser;
 use URI;
 use Getopt::Std;
 use XML::Simple;
+use JSON;
 
 my @creds;
 open (CREDS, "creds.txt") || die "fill in your creds.txt.";
@@ -31,42 +31,31 @@ my $request;
  $request =~ s/ $//;
  print $request;
  my $url = URI->new( "http://www.tinysong.com/s/$request" );
- if ($opt_l) { $url->query_form( 'limit' => $opt_l);}
+ if ($opt_l) { $url->query_form( 'limit' => $opt_l, 'format' => 'json');}
+ else { $url->query_form( 'format' => 'json');}
  
-my $string ='';
-my @songinfo = split(/\n/, $ua->get($url)->decoded_content);
+my @songids;
+my $songinfo = from_json($ua->get($url)->decoded_content);
 
-#For some reason, the tinysong api returns the last two results without a new li
-#ne separator.  This is certainly a bug, and will probably be fixed eventually. 
-#In the meantime, these next three lines take care of the problem.
+foreach my $line (@{$songinfo}) {
+  push(@songids, $line->{SongID});}
 
-##BEGIN WORKAROUND
-
- my @lastTwoElementsFix = split(/;http/, pop(@songinfo));
- $lastTwoElementsFix[1] = "http" . $lastTwoElementsFix[1];
- push(@songinfo, @lastTwoElementsFix);
-
-##END WORKAROUND
-
- foreach my $line (@songinfo) {
-  my @temp=split(/; /, $line);
-  $string .= $temp[1] . ",";
-  $line=\@temp;}
- $string =~ s/,$//;
- print $string;
+my $string = join(',',@songids);
 
  my $htmlresults = qq~ <object width="400" height="400"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$string&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="400" height="400" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$string&amp;style=metal&amp;p=0"></embed>~;
 
 my $posturl = URI->new( "http://posterous.com/api/newpost");
   $posturl->query_form(  # And here the form data pairs:
    'site_id' => 1251953,
-   'autopost' => 1,
+   'autopost' => 0,
    'title' => "Playlist results for '$request'",
    'body' => $htmlresults,
   );
 
 my $data = XMLin($ua->get($posturl)->content);
-print $data;
- my $posterousurl = $data->{post}->{url};
+while( my ($k, $v) = each %{$data}) {
+  print "$k : $v\n";}
+
+my $posterousurl = $data->{post}->{url};
 
 print $posterousurl . "\n";
