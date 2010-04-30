@@ -44,12 +44,15 @@ my $string = join(',',@songids);
 
  my $htmlresults = qq~ <object width="400" height="400"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$string&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="400" height="400" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$string&amp;style=metal&amp;p=0"></embed>~;
 
+my $tags = $request;
+$tags =~ s/ /,/g;
 my $posturl = URI->new( "http://posterous.com/api/newpost");
   $posturl->query_form(  # And here the form data pairs:
    'site_id' => 1251953,
    'autopost' => 0,
    'title' => "Playlist results for '$request'",
    'body' => $htmlresults,
+   'tags' => "Playlist," . $request 
   );
 
 my $data = XMLin($ua->get($posturl)->content);

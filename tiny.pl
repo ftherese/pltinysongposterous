@@ -54,6 +54,7 @@ my $posturl = URI->new( "http://posterous.com/api/newpost");
    'autopost' => 0,
    'title' => "$songinfo->{SongName} - $songinfo->{ArtistName}",
    'body' => $htmlresults,
+   'tags' => "$songinfo->{SongName},$songinfo->{ArtistName},$songinfo->{AlbumName}"
   );
 
 my $data = XMLin($ua->get($posturl)->content);

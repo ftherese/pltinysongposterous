@@ -43,6 +43,7 @@ my $posturl = URI->new( "http://posterous.com/api/newpost");
    'autopost' => 0,
    'title' => "Streaming Top Songs Playlist via Grooveshark.com.",
    'body' => $htmlresults,
+   'tags' => "Popular,Streaming,#musicmonday,streaming,grooveshack,Playlist"
   );
 
 my $data = XMLin($ua->get($posturl)->content);
