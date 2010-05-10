@@ -21,13 +21,12 @@ my $request;
  foreach my $n (@ARGV) {$request .= $n . " ";}
  $request =~ s/ $//;
  print $request . "\n";
- my $url = URI->new( "http://www.tinysong.com/s/$request" );
+ my $url = URI->new( "http://tinysong.com/s/$request" );
  if (defined($opt_l)){$url->query_form( 'limit' => $opt_l, 'format' => 'json');}
  else{$url->query_form( 'format' => 'json');}
  
 #my @songinfo = split(/\n/, $ua->get($url)->decoded_content);
 my $songinfo = decode_json $ua->get($url)->decoded_content;
-
 #For some reason, the tinysong api returns the last two results without a new li
 #ne separator.  This is certainly a bug, and will probably be fixed eventually. 
 #In the meantime, these next three lines take care of the problem.
