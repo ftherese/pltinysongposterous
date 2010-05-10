@@ -4,6 +4,7 @@
 
 require LWP::UserAgent;
 use URI;
+use Getopt::Std;
 use XML::Simple;
 use JSON;
 
@@ -14,6 +15,8 @@ while (my $line = <CREDS>){
 close(CREDS);
 $creds[0] =~ s/\n//g;
 $creds[1] =~ s/\n//g;
+
+getopts('p');
 
 my $ua = LWP::UserAgent->new;
  $ua->timeout(10);
@@ -27,14 +30,15 @@ my @songs;
 
 foreach my $row (@{$songinfo->{channel}->{item}}){
   print $row->{title} . "\n" . $row->{link}."\n\n";
-  my $tinyurl = URI->new( "http://www.tinysong.com/b/$row->{title}" );
+  if ($opt_p){ my $tinyurl = URI->new( "http://www.tinysong.com/b/$row->{title}" );
   $tinyurl->query_form( 'format' => 'json');
   my $songid = from_json($ua->get($tinyurl)->decoded_content);
   print $songid->{SongID}."\n";
-  push(@songs, $songid->{SongID});
+  push(@songs, $songid->{SongID});}
 }
+if ($opt_p){
 my $songids = join(',', @songs);
-my $htmlresults = qq~ <object width="250" height="40"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0"></embed>~;
+my $htmlresults = qq~ <object width="400" height="400"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0"></embed>~;
 #  $htmlresults =~ s/([^\\])(["`])/$1\\$2/g;
 
 my $posturl = URI->new( "http://posterous.com/api/newpost");
@@ -43,7 +47,7 @@ my $posturl = URI->new( "http://posterous.com/api/newpost");
    'autopost' => 0,
    'title' => "Streaming Top Songs Playlist via Grooveshark.com.",
    'body' => $htmlresults,
-   'tags' => "Popular,Streaming,#musicmonday,streaming,grooveshack,Playlist"
+   'tags' => "Popular,Streaming,#musicmonday,grooveshark,Playlist"
   );
 
 my $data = XMLin($ua->get($posturl)->content);
@@ -52,4 +56,4 @@ my $data = XMLin($ua->get($posturl)->content);
 #foreach my $n (@songinfo) {
 #        print $n . "\n";}
 #
-print $posterousurl . "\n";
+print $posterousurl . "\n";}
