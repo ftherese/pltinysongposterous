@@ -38,7 +38,7 @@ foreach my $row (@{$songinfo->{channel}->{item}}){
 }
 if ($opt_p){
 my $songids = join(',', @songs);
-my $htmlresults = qq~ <object width="400" height="400"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0"></embed>~;
+my $htmlresults = qq~ <object width="400" height="400"><param name="movie" value="http://listen.grooveshark.com/widget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/widget.swf" type="application/x-shockwave-flash" wmode="window" width="400" height="400" flashvars="hostname=cowbell.grooveshark.com&amp;songIDs=$songids&amp;style=metal&amp;p=0"></embed>~;
 #  $htmlresults =~ s/([^\\])(["`])/$1\\$2/g;
 
 my $posturl = URI->new( "http://posterous.com/api/newpost");
