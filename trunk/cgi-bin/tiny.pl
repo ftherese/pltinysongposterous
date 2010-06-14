@@ -1,4 +1,3 @@
-
 #!/usr/bin/perl -w
 
 # Uses the Tinysong and Posterous APIs to embed a player for a song search. 
