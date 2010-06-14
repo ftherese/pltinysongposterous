@@ -22,7 +22,7 @@ if (not (defined $opt_l)){$opt_l = 20;}
 
 my $artisturl = URI->new( "http://developer.echonest.com/api/search_artists");
   $artisturl->query_form(  # And here the form data pairs:
-   'api_key' => 'FHJKAB4MCVIWD0WDF',
+   'api_key' => 'FHJKAB4MCVIWD0WDF', #Use your own key please :)
    'version' => 3,
    'query' => $request,
    'rows' => 1,
@@ -50,13 +50,12 @@ while (my ($key, $value) = each (%{$artistdata->{artists}->{artist}->{audio}->{d
 for (my $i=15; $i<=$rows; $i+=15){
  my $audiourl = URI->new('http://developer.echonest.com/api/get_audio'); 
  $audiourl->query_form(
-  'api_key' => 'FHJKAB4MCVIWD0WDF',
+  'api_key' => 'FHJKAB4MCVIWD0WDF', #Use your own key please :)
   'version' => 3,
   'id' => $artistid,
   'start' => $i,
  );
  my $audiodata = XMLin($ua->get($audiourl)->content);
- print Dumper($audiodata);
  while (my ($key, $value) = each (%{$audiodata->{results}->{doc}})){
   while (my ($k, $v) = each (%{$value})){
    if ($k eq 'url'){
