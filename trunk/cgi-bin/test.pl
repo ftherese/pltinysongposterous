@@ -11,6 +11,7 @@ use LWP::UserAgent;
 use JSON;
 #use Data::Dumper;
 use URI;
+use HTML::Entities;
 #use HTML::TableExtract;
 use HTTP::Request::Common;
 use XML::Simple;
@@ -26,12 +27,13 @@ my $ua = LWP::UserAgent->new;
  $ua->timeout(20);
 
 if ($similar eq "similar"){
- $artisturl = URI->new( "http://developer.echonest.com/api/search_artists");
+ $artisturl = URI->new( "http://developer.echonest.com/api/v4/artist/search");
   $artisturl->query_form(  # And here the form data pairs:
    'api_key' => 'FHJKAB4MCVIWD0WDF',
-   'version' => 3,
-   'query' => $request,
-   'rows' => 1,
+#   'version' => 3,
+   'name' => $request,
+   'results' => 1,
+   'format' => 'xml',
   );
  $artistdata = XMLin($ua->get($artisturl)->content);
 
@@ -45,18 +47,19 @@ if ($similar eq "similar"){
   }
  }
 
- my $getSimilarUrl = URI->new( "http://developer.echonest.com/api/get_similar");
+ my $getSimilarUrl = URI->new( "http://developer.echonest.com/api/v4/artist/similar");
   $getSimilarUrl->query_form(
    'api_key' => 'FHJKAB4MCVIWD0WDF',
-   'id'      => $artistid,
+   'name'      => $request,
+   'format'  => 'xml',
 #  'rows'    => '12',
-   'version' => 3,
+#  'version' => 3,
 #  'bucket'  => 'audio',
   );
 
  my $getSimilarData = XMLin($ua->get($getSimilarUrl)->decoded_content);
 
- while (my ($key, $value) = each (%{$getSimilarData->{similar}->{artist}})){
+ while (my ($key, $value) = each (%{$getSimilarData->{artists}->{artist}})){
   print "$key".'</br>';
  }
 }
@@ -70,5 +73,5 @@ else {
 #print Dumper($json);
 
  foreach my $song (@{$json}){
-  print '<a href='. "\"$song->{Url}\"" . ' target="_blank" >' . $song->{SongName} . '</a><br/>' . "$song->{ArtistName} - $song->{AlbumName}" . '</br>';}
+  print '<a href='. "\"$song->{Url}\"" . ' target="_blank" >' . encode_entities($song->{SongName}) . '</a><br/>' . encode_entities($song->{ArtistName})." - ". encode_entities($song->{AlbumName}) . '</br>';}
 }

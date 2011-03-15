@@ -26,6 +26,7 @@ use CGI::Compress::Gzip qw~:standard~;
 use CGI qw(param);
 require LWP::UserAgent;
 use URI;
+use HTTP::Request::Common;
 use XML::Simple;
 use JSON;
 
@@ -38,7 +39,8 @@ $creds[0] =~ s/\n//g;
 $creds[1] =~ s/\n//g;
 
 my $ua = LWP::UserAgent->new;
- $ua->timeout(10);
+ $ua->timeout(100);
+ $ua->default_header('HTTP_REFERER' => 'http://tinysong.posterous.com');
  $ua->env_proxy;
  $ua->credentials("posterous.com:80",'Posterous',$creds[0],$creds[1]);
 
@@ -48,24 +50,46 @@ my $request = param("w");
  
 my $songinfo = from_json($ua->get($url)->decoded_content);
 
-my $htmlresults = qq~ <object width="250" height="40"><param name="movie" value="http://listen.grooveshark.com/songWidget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/songWidget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0"></embed></object></br>~;
+my $artisturl = URI->new( "http://developer.echonest.com/api/v4/artist/search");
+ $artisturl->query_form(  # And here the form data pairs:
+  'api_key' => 'FHJKAB4MCVIWD0WDF',
+#  'version' => 3,
+  'name' => $request,
+  'results' => 1,
+  'bucket' => 'images',
+  'format' => 'xml',
+ );
+
+my $artistdata = XMLin($ua->get($artisturl)->content);
+
+my @images;
+
+my $imagedata = $artistdata->{artists}->{artist}->{images};
+$imagedata = [$imagedata] unless ref $imagedata eq 'ARRAY';
+
+foreach my $image (@{$imagedata}){
+ push(@images,'<li><a href="'.$image->{url}.'" title="Click to see full image." target="_blank" ><img src="'.$image->{url}.'" /></a><div><img src="'.$image->{url}.'" /></div></li>');
+}
+my $imagestr = '<div class="slideshow"><ul>' . (join('',@images)) . '</ul></div>';
+
+my $htmlresults = qq~ $imagestr<object width="250" height="40"><param name="movie" value="http://listen.grooveshark.com/songWidget.swf" /><param name="flashvars" value="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0" /><embed src="http://listen.grooveshark.com/songWidget.swf" type="application/x-shockwave-flash" wmode="window" width="250" height="40" flashvars="hostname=cowbell.grooveshark.com&amp;songID=$songinfo->{SongID}&amp;style=metal&amp;p=0"></embed></object></br>~;
 
 
 #  $htmlresults =~ s/([^\\])(["`])/$1\\$2/g;
 
-my $posturl = URI->new( "http://posterous.com/api/newpost");
-  $posturl->query_form(  # And here the form data pairs:
-   'site_id' => 1251953,
-   'autopost' => 0,
-   'title' => "$songinfo->{SongName} - $songinfo->{ArtistName}",
-   'body' => $htmlresults,
-   'tags' => "$songinfo->{SongName},$songinfo->{ArtistName},$songinfo->{AlbumName}"
-  );
+my $posturl = $ua->request(POST "http://posterous.com/api/newpost", 
+  [ # And here the form data pairs:
+   site_id => '1251953',
+   autopost => '0',
+   title => "$songinfo->{SongName} - $songinfo->{ArtistName}",
+   body => $htmlresults,
+   tags => "$songinfo->{SongName},$songinfo->{ArtistName},$songinfo->{AlbumName}"]
+  )->decoded_content;
 
 my $c = new CGI::Compress::Gzip;
 print $c->header();
 
-my $data = XMLin($ua->get($posturl)->content);
+my $data = XMLin($posturl);
 my $posterousurl = $data->{post}->{url};
 
 print '<br/>Listen to ' . "<b>$songinfo->{SongName}</b> by <i>$songinfo->{ArtistName}</i> from the album <i>$songinfo->{AlbumName}</i> at " .'<a href=' . "\"$posterousurl\" target=\"_parent\" >" . $posterousurl . '</a>';
